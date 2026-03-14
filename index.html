@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MovieDex — Movie Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --card: #1a1a26;
+      --border: #2a2a3a;
+      --gold: #f0b429;
+      --gold-dim: #c49020;
+      --text: #e8e8f0;
+      --muted: #888899;
+      --accent: #e05c3a;
+      --green: #3dcf8e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.95);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 62px;
+      gap: 16px;
+    }
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .logo span { color: var(--text); }
+    .nav-links { display: flex; gap: 20px; flex-shrink: 0; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.82rem; font-weight: 500; letter-spacing: 0.5px;
+      transition: color 0.2s; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .search-bar {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 14px;
+      min-width: 0; flex: 1; max-width: 240px;
+    }
+    .search-bar input {
+      background: none; border: none; outline: none;
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; width: 100%; min-width: 0;
+    }
+    .search-bar input::placeholder { color: var(--muted); }
+    .search-icon { color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      nav { padding: 0 16px; }
+      .search-bar { max-width: 100%; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 60px 32px 44px;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240,180,41,0.08) 0%, transparent 70%);
+    }
+    .hero-eyebrow {
+      font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.4rem, 5vw, 4.5rem);
+      font-weight: 700; line-height: 1.05;
+      color: var(--text); margin-bottom: 16px;
+    }
+    .hero h1 em { color: var(--gold); font-style: italic; }
+    .hero p { color: var(--muted); font-size: 0.95rem; max-width: 480px; margin: 0 auto; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex; gap: 8px; justify-content: center;
+      padding: 20px 32px 0; flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); padding: 6px 16px; border-radius: 100px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.8rem;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--gold); color: #000; border-color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      padding: 36px 32px 16px;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+      margin: 0 32px;
+    }
+    .new-releases-label {
+      padding: 36px 32px 16px;
+      margin: 0 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .new-releases-label .label-text {
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .new-badge {
+      background: var(--accent); color: #fff;
+      font-size: 0.6rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ── GRID ── */
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 20px; padding: 28px 32px 52px;
+    }
+
+    @media (max-width: 600px) {
+      .movies-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px 16px 40px; }
+      .section-label, .new-releases-label { margin: 0 16px; padding-left: 0; padding-right: 0; }
+      .filter-bar { padding: 16px 16px 0; }
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; cursor: pointer;
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px var(--gold-dim);
+      border-color: var(--gold-dim);
+    }
+    /* ── POSTER IMAGE ── */
+    .card-poster {
+      width: 100%; aspect-ratio: 2/3;
+      object-fit: cover; object-position: center top;
+      display: block;
+    }
+    .card-poster-placeholder {
+      width: 100%; aspect-ratio: 2/3;
+      background: linear-gradient(160deg, #1e1e2e 0%, #12121a 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    .card-poster-placeholder .poster-icon { font-size: 2.8rem; }
+    .card-poster-placeholder .poster-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem; font-weight: 600;
+      text-align: center; padding: 0 10px; color: var(--muted);
+      line-height: 1.2;
+    }
+    /* ── MODAL POSTER THUMB IMAGE ── */
+    .modal-poster-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      border-radius: 6px;
+    }
+    .card-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--accent); color: #fff;
+      font-size: 0.58rem; font-weight: 700;
+      padding: 3px 7px; border-radius: 4px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      max-width: calc(100% - 20px);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .card-rank {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(0,0,0,0.65); color: var(--gold);
+      font-size: 0.68rem; font-weight: 700;
+      padding: 3px 7px; border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+    .card-body { padding: 12px; }
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-meta {
+      font-size: 0.74rem; color: var(--muted);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-rating {
+      display: flex; align-items: center; gap: 3px;
+      color: var(--gold); font-weight: 600; font-size: 0.8rem;
+    }
+    .card-genres {
+      display: flex; gap: 4px; flex-wrap: wrap; margin-top: 7px;
+    }
+    .genre-tag {
+      background: rgba(240,180,41,0.1); color: var(--gold-dim);
+      font-size: 0.63rem; padding: 2px 7px; border-radius: 100px;
+      border: 1px solid rgba(240,180,41,0.2);
+    }
+
+    /* ── MODAL ── */
+    .overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+      overflow-y: auto; padding: 24px 16px;
+    }
+    .overlay.open { display: flex; align-items: flex-start; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; max-width: 860px; width: 100%;
+      margin: 0 auto; overflow: hidden;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-hero {
+      position: relative; min-height: 260px;
+      background: linear-gradient(160deg, #1a1a2e 0%, #0f0f1a 100%);
+      display: flex; align-items: flex-end;
+      overflow: hidden;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(10,10,15,0.1) 0%, rgba(10,10,15,0.85) 80%, var(--surface) 100%);
+      z-index: 1;
+    }
+    .modal-poster-bg {
+      position: absolute; inset: 0;
+      font-size: 8rem; display: flex; align-items: center; justify-content: center;
+      opacity: 0.05; z-index: 0;
+    }
+    .modal-top-info {
+      position: relative; z-index: 2;
+      padding: 24px 28px 20px;
+      display: flex; gap: 16px; align-items: flex-end; width: 100%;
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px; z-index: 10;
+      background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+      color: var(--muted); width: 34px; height: 34px;
+      border-radius: 50%; cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+
+    .modal-poster-thumb {
+      width: 88px; flex-shrink: 0;
+      background: var(--card); border-radius: 8px;
+      border: 2px solid var(--border);
+      aspect-ratio: 2/3;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+    }
+    .modal-titles { min-width: 0; flex: 1; }
+    .modal-titles h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+      font-weight: 700; line-height: 1.1;
+    }
+    .modal-titles .tagline {
+      color: var(--muted); font-style: italic; font-size: 0.86rem; margin-top: 4px;
+    }
+    .modal-quick {
+      display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;
+      font-size: 0.79rem; color: var(--muted);
+    }
+    .modal-quick span { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .modal-quick .rating-big {
+      color: var(--gold); font-size: 1rem; font-weight: 700;
+    }
+
+    /* ── TRAILER BUTTON ── */
+    .trailer-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--accent); color: #fff;
+      padding: 8px 16px; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.81rem; font-weight: 600;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all 0.2s; margin-top: 12px;
+    }
+    .trailer-btn:hover { background: #c54d2e; transform: scale(1.03); }
+    .trailer-btn svg { width: 13px; height: 13px; fill: white; }
+
+    /* ── MODAL BODY ── */
+    .modal-body { padding: 22px 28px 30px; }
+
+    .modal-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 22px; margin-bottom: 22px;
+    }
+    @media (max-width: 580px) {
+      .modal-grid { grid-template-columns: 1fr; }
+      .modal-top-info { padding: 20px 16px 16px; }
+      .modal-body { padding: 18px 16px 24px; }
+      .modal-poster-thumb { width: 70px; }
+    }
+
+    .section-title {
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 10px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .plot-text { color: var(--muted); font-size: 0.87rem; line-height: 1.7; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .stat-item { background: var(--card); border-radius: 8px; padding: 10px 12px; }
+    .stat-label { font-size: 0.63rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+    .stat-value { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.green { color: var(--green); }
+
+    .cast-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cast-chip {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 100px; padding: 4px 11px;
+      font-size: 0.77rem; color: var(--text);
+    }
+    .cast-chip .role { color: var(--muted); font-size: 0.69rem; }
+
+    .songs-list { display: flex; flex-direction: column; gap: 5px; }
+    .song-item {
+      display: flex; align-items: center; gap: 9px;
+      background: var(--card); border-radius: 7px; padding: 7px 10px;
+      font-size: 0.8rem;
+    }
+    .song-num { color: var(--muted); font-size: 0.72rem; width: 16px; flex-shrink: 0; }
+    .song-name { color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .song-duration { color: var(--muted); font-size: 0.72rem; flex-shrink: 0; }
+    .note { font-size: 0.75rem; color: var(--muted); font-style: italic; margin-top: 6px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 32px; text-align: center;
+      color: var(--muted); font-size: 0.8rem;
+    }
+    footer span { color: var(--gold); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Movie<span>Dex</span></div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">Top Rated</a>
+    <a href="#newReleasesSection">New Releases</a>
+    <a href="#">Genres</a>
+  </div>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search movies..." id="searchInput" oninput="filterMovies()"/>
+  </div>
+</nav>
+
+<section class="hero">
+  <p class="hero-eyebrow">Welcome to MovieDex</p>
+  <h1>Every Film,<br/><em>Every Story</em></h1>
+  <p>Trailers, ratings, cast, box office — everything you need to know about cinema.</p>
+</section>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterGenre('all', this)">All</button>
+  <button class="filter-btn" onclick="filterGenre('sci-fi', this)">Sci-Fi</button>
+  <button class="filter-btn" onclick="filterGenre('thriller', this)">Thriller</button>
+  <button class="filter-btn" onclick="filterGenre('drama', this)">Drama</button>
+  <button class="filter-btn" onclick="filterGenre('action', this)">Action</button>
+  <button class="filter-btn" onclick="filterGenre('crime', this)">Crime</button>
+  <button class="filter-btn" onclick="filterGenre('fantasy', this)">Fantasy</button>
+  <button class="filter-btn" onclick="filterGenre('adventure', this)">Adventure</button>
+  <button class="filter-btn" onclick="filterGenre('war', this)">War</button>
+  <button class="filter-btn" onclick="filterGenre('superhero', this)">Superhero</button>
+  <button class="filter-btn" onclick="filterGenre('romance', this)">Romance</button>
+<button class="filter-btn" onclick="filterGenre('animation', this)">Animation</button>
+<button class="filter-btn" onclick="filterGenre('horror', this)">Horror</button>
+<button class="filter-btn" onclick="filterGenre('sports', this)">Sports</button>
+<button class="filter-btn" onclick="filterGenre('period', this)">Period</button>
+  <button class="filter-btn" onclick="filterGenre('mystery', this)">Mystery</button>
+</div>
+
+<!-- New Releases Section -->
+<div id="newReleasesSection">
+  <div class="new-releases-label">
+    <span class="label-text">New Releases</span>
+    <span class="new-badge">2025 · 2026</span>
+  </div>
+  <div class="movies-grid" id="newReleasesGrid"></div>
+</div>
+
+<!-- All Films Section -->
+<p class="section-label">All Films — Sorted by Rating</p>
+<div class="movies-grid" id="moviesGrid"></div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hero" id="modalHero">
+      <div class="modal-poster-bg" id="modalBg"></div>
+      <div class="modal-backdrop"></div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      <div class="modal-top-info">
+        <div class="modal-poster-thumb" id="modalThumb"></div>
+        <div class="modal-titles">
+          <h2 id="modalTitle"></h2>
+          <p class="tagline" id="modalTagline"></p>
+          <div class="modal-quick">
+            <span><span class="rating-big" id="modalRating"></span> / 10 ⭐</span>
+            <span id="modalYear"></span>
+            <span id="modalRuntime"></span>
+            <span id="modalDirector"></span>
+          </div>
+          <a class="trailer-btn" id="trailerBtn" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Watch Trailer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div>
+          <p class="section-title">Plot</p>
+          <p class="plot-text" id="modalPlot"></p>
+          <div class="card-genres" id="modalGenres" style="margin-top:12px"></div>
+        </div>
+        <div>
+          <p class="section-title">Box Office &amp; Budget</p>
+          <div class="stats-grid" id="modalStats"></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <p class="section-title">Cast</p>
+        <div class="cast-list" id="modalCast"></div>
+      </div>
+
+      <div>
+        <p class="section-title">Soundtrack</p>
+        <div class="songs-list" id="modalSongs"></div>
+        <p class="note" id="modalSongsNote"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>A Jitendra Peduri production· <span>MovieDex</span> · All Rights Reserved</footer>
+
+<script>
+const movies = [
+  {
+    id: 1, poster: "inception.jpg", title: "Inception", year: 2010, runtime: "2h 28m", rating: 8.8,
+    director: "Christopher Nolan", tagline: "Your mind is the scene of the crime.",
+    plot: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the mission and his team to disaster.",
+    genres: ["Sci-Fi", "Thriller", "Action"], budget: "$160 million", boxOffice: "$836.8 million",
+    openingWeekend: "$62.8 million", releaseDate: "July 16, 2010",
+    trailerUrl: "https://youtu.be/YoHD9XEInc0?si=SXO92h-RzrhL05P9", emoji: "🌀", badge: "ICONIC",
+    cast: [
+      { name: "Leonardo DiCaprio", role: "Dom Cobb" }, { name: "Joseph Gordon-Levitt", role: "Arthur" },
+      { name: "Elliot Page", role: "Ariadne" }, { name: "Tom Hardy", role: "Eames" },
+      { name: "Ken Watanabe", role: "Saito" }, { name: "Cillian Murphy", role: "Robert Fischer" }
+    ],
+    songs: [
+      { title: "Time", duration: "4:35", note: "Hans Zimmer" }, { title: "Dream Is Collapsing", duration: "2:02", note: "Hans Zimmer" },
+      { title: "Mombasa", duration: "3:41", note: "Hans Zimmer" }, { title: "528491", duration: "2:50", note: "Hans Zimmer" },
+      { title: "Non, je ne regrette rien", duration: "3:12", note: "Édith Piaf (featured)" }
+    ],
+    songsNote: "Composed by Hans Zimmer"
+  },
+  {
+    id: 2, poster: "dark knight.jpg", title: "The Dark Knight", year: 2008, runtime: "2h 32m", rating: 9.0,
+    director: "Christopher Nolan", tagline: "Why so serious?",
+    plot: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+    genres: ["Action", "Crime", "Thriller"], budget: "$185 million", boxOffice: "$1.005 billion",
+    openingWeekend: "$158.4 million", releaseDate: "July 18, 2008",
+    trailerUrl: "https://youtu.be/EXeTwQWrcwY?si=dZc_hMS3TFF1Mpfj", emoji: "🦇", badge: "TOP RATED",
+    cast: [
+      { name: "Christian Bale", role: "Bruce Wayne / Batman" }, { name: "Heath Ledger", role: "The Joker" },
+      { name: "Aaron Eckhart", role: "Harvey Dent" }, { name: "Maggie Gyllenhaal", role: "Rachel Dawes" },
+      { name: "Gary Oldman", role: "Jim Gordon" }, { name: "Michael Caine", role: "Alfred" }
+    ],
+    songs: [
+      { title: "Why So Serious?", duration: "9:14", note: "Hans Zimmer & James Newton Howard" },
+      { title: "I'm Not a Hero", duration: "4:04", note: "Hans Zimmer & James Newton Howard" },
+      { title: "A Dark Knight", duration: "14:35", note: "Hans Zimmer & James Newton Howard" },
+      { title: "Like a Dog Chasing Cars", duration: "5:14", note: "Hans Zimmer & James Newton Howard" }
+    ],
+    songsNote: "Score by Hans Zimmer & James Newton Howard"
+  },
+  {
+    id: 3, poster: "interstellar.jpg", title: "Interstellar", year: 2014, runtime: "2h 49m", rating: 8.7,
+    director: "Christopher Nolan", tagline: "Mankind was born on Earth. It was never meant to die here.",
+    plot: "When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Cooper, is tasked to pilot a spacecraft, along with a team of researchers, to find a new planet for humans.",
+    genres: ["Sci-Fi", "Drama"], budget: "$165 million", boxOffice: "$701.8 million",
+    openingWeekend: "$47.5 million", releaseDate: "November 7, 2014",
+    trailerUrl: "https://youtu.be/zSWdZVtXT7E?si=2Jd-tZiSulxZ7q3C", emoji: "🪐", badge: null,
+    cast: [
+      { name: "Matthew McConaughey", role: "Cooper" }, { name: "Anne Hathaway", role: "Brand" },
+      { name: "Jessica Chastain", role: "Murph (adult)" }, { name: "Michael Caine", role: "Prof. Brand" },
+      { name: "Matt Damon", role: "Dr. Mann" }
+    ],
+    songs: [
+      { title: "Cornfield Chase", duration: "2:06", note: "Hans Zimmer" }, { title: "Stay", duration: "5:53", note: "Hans Zimmer" },
+      { title: "No Time for Caution", duration: "2:42", note: "Hans Zimmer" }, { title: "Detach", duration: "3:25", note: "Hans Zimmer" },
+      { title: "Tick-Tock", duration: "3:52", note: "Hans Zimmer" }
+    ],
+    songsNote: "Score by Hans Zimmer"
+  },
+  {
+    id: 4, poster: "parasite.jpg", title: "Parasite", year: 2019, runtime: "2h 12m", rating: 8.5,
+    director: "Bong Joon-ho", tagline: "Act like you own the place.",
+    plot: "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan as the Kims scheme to become employed by the Parks.",
+    genres: ["Thriller", "Drama", "Crime"], budget: "$11.4 million", boxOffice: "$263.1 million",
+    openingWeekend: "$393K", releaseDate: "May 30, 2019",
+    trailerUrl: "https://youtu.be/5xH0HfJHsaY?si=Hl3yfTcpI8UlJlKK", emoji: "🏠", badge: "OSCAR WINNER",
+    cast: [
+      { name: "Song Kang-ho", role: "Ki-taek" }, { name: "Lee Sun-kyun", role: "Park Dong-ik" },
+      { name: "Cho Yeo-jeong", role: "Yeon-gyo" }, { name: "Choi Woo-shik", role: "Ki-woo" },
+      { name: "Park So-dam", role: "Ki-jung" }
+    ],
+    songs: [
+      { title: "Soju One Glass", duration: "3:02", note: "Jung Jae-il" }, { title: "A Glass of Soju (Piano)", duration: "2:18", note: "Jung Jae-il" },
+      { title: "The Belt of Faith", duration: "3:44", note: "Jung Jae-il" }, { title: "Bunker", duration: "4:06", note: "Jung Jae-il" }
+    ],
+    songsNote: "Score by Jung Jae-il"
+  },
+  {
+    id: 5, poster: "godfather.jpg", title: "The Godfather", year: 1972, runtime: "2h 55m", rating: 9.2,
+    director: "Francis Ford Coppola", tagline: "An offer you can't refuse.",
+    plot: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son, navigating family loyalty, power, and betrayal in post-war America.",
+    genres: ["Crime", "Drama"], budget: "$6 million", boxOffice: "$246.1 million",
+    openingWeekend: "$1.1 million", releaseDate: "March 24, 1972",
+    trailerUrl: "https://youtu.be/UaVTIH8mujA?si=tQykxqZS0dbApqBH", emoji: "🌹", badge: "ALL-TIME CLASSIC",
+    cast: [
+      { name: "Marlon Brando", role: "Vito Corleone" }, { name: "Al Pacino", role: "Michael Corleone" },
+      { name: "James Caan", role: "Sonny Corleone" }, { name: "Robert Duvall", role: "Tom Hagen" },
+      { name: "Diane Keaton", role: "Kay Adams" }
+    ],
+    songs: [
+      { title: "The Godfather Waltz", duration: "2:46", note: "Nino Rota" }, { title: "I Have But One Heart", duration: "3:12", note: "Nino Rota" },
+      { title: "The Pickup", duration: "1:58", note: "Nino Rota" }, { title: "The Baptism / The Murder", duration: "4:02", note: "Nino Rota" }
+    ],
+    songsNote: "Score by Nino Rota"
+  },
+  {
+    id: 6, poster: "endgame.jpg", title: "Avengers: Endgame", year: 2019, runtime: "3h 1m", rating: 8.4,
+    director: "Anthony & Joe Russo", tagline: "Whatever it takes.",
+    plot: "After the devastating events of Infinity War, the universe is in ruins. With the help of remaining allies, the Avengers assemble once more to reverse Thanos' actions and restore balance to the universe.",
+    genres: ["Action", "Sci-Fi"], budget: "$356 million", boxOffice: "$2.799 billion",
+    openingWeekend: "$357.1 million", releaseDate: "April 26, 2019",
+    trailerUrl: "https://youtu.be/TcMBFSGVi1c?si=7JMuU0lT4KPPaWn2", emoji: "⚡", badge: "BOX OFFICE #1",
+    cast: [
+      { name: "Robert Downey Jr.", role: "Tony Stark / Iron Man" }, { name: "Chris Evans", role: "Steve Rogers / Captain America" },
+      { name: "Mark Ruffalo", role: "Bruce Banner / Hulk" }, { name: "Chris Hemsworth", role: "Thor" },
+      { name: "Scarlett Johansson", role: "Natasha Romanoff" }, { name: "Jeremy Renner", role: "Clint Barton / Hawkeye" }
+    ],
+    songs: [
+      { title: "Portals", duration: "5:17", note: "Alan Silvestri" }, { title: "Reassemble", duration: "5:11", note: "Alan Silvestri" },
+      { title: "So No Head?", duration: "2:04", note: "Alan Silvestri" }, { title: "Proof", duration: "6:20", note: "Alan Silvestri" },
+      { title: "The Real Hero", duration: "4:13", note: "Alan Silvestri" }
+    ],
+    songsNote: "Score by Alan Silvestri"
+  },
+  {
+    id: 7, poster: "superman.jpg", title: "Superman", year: 2025, runtime: "2h 9m", rating: 8.0,
+    director: "James Gunn", tagline: "Look up.",
+    plot: "Clark Kent struggles to balance his Kryptonian heritage with his human upbringing in Smallville. As Superman, he becomes a symbol of hope while facing powerful enemies and questioning what it truly means to protect humanity.",
+    genres: ["Superhero", "Action", "Sci-Fi", "Adventure"], budget: "$225 million", boxOffice: "$770 million",
+    openingWeekend: "$125 million", releaseDate: "July 11, 2025",
+    trailerUrl: "https://youtu.be/Ox8ZLF6cGM0?si=7FJUAdaZpXuRXqlC", emoji: "🦸‍♂️", badge: "DC REBOOT",
+    cast: [
+      { name: "David Corenswet", role: "Clark Kent / Superman" }, { name: "Rachel Brosnahan", role: "Lois Lane" },
+      { name: "Nicholas Hoult", role: "Lex Luthor" }, { name: "Nathan Fillion", role: "Guy Gardner / Green Lantern" },
+      { name: "Isabela Merced", role: "Hawkgirl" }, { name: "Edi Gathegi", role: "Mister Terrific" }
+    ],
+    songs: [
+      { title: "Superman Theme (New Version)", duration: "4:12", note: "John Murphy & David Fleming" },
+      { title: "Flight of Hope", duration: "3:38", note: "John Murphy & David Fleming" },
+      { title: "Metropolis Rising", duration: "3:05", note: "John Murphy & David Fleming" },
+      { title: "Legacy of Krypton", duration: "2:57", note: "John Murphy & David Fleming" },
+      { title: "Hero of Tomorrow", duration: "4:20", note: "John Murphy & David Fleming" }
+    ],
+    songsNote: "Composed by John Murphy and David Fleming"
+  },
+  {
+    id: 8, poster: "shawshank redemption.jpg", title: "The Shawshank Redemption", year: 1994, runtime: "2h 22m", rating: 9.3,
+    director: "Frank Darabont", tagline: "Fear can hold you prisoner. Hope can set you free.",
+    plot: "Andy Dufresne, a banker wrongly convicted of murdering his wife and her lover, is sentenced to life at Shawshank State Penitentiary. Over the years he forms a deep friendship with fellow inmate Red and quietly works toward hope and freedom while enduring the brutality of prison life.",
+    genres: ["Drama", "Crime"], budget: "$25 million", boxOffice: "$73.3 million",
+    openingWeekend: "$727,000", releaseDate: "September 23, 1994",
+    trailerUrl: "https://youtu.be/V75dMMIW2B4?si=8z3XUfCk0yKKVuDq", emoji: "🔓", badge: "CLASSIC",
+    cast: [
+      { name: "Tim Robbins", role: "Andy Dufresne" }, { name: "Morgan Freeman", role: "Ellis Boyd 'Red' Redding" },
+      { name: "Bob Gunton", role: "Warden Norton" }, { name: "William Sadler", role: "Heywood" },
+      { name: "Clancy Brown", role: "Captain Hadley" }, { name: "Gil Bellows", role: "Tommy Williams" }
+    ],
+    songs: [
+      { title: "Main Title", duration: "3:00", note: "Thomas Newman" }, { title: "Stoic Theme", duration: "2:14", note: "Thomas Newman" },
+      { title: "Shawshank Prison", duration: "1:58", note: "Thomas Newman" }, { title: "So Was Red", duration: "4:11", note: "Thomas Newman" },
+      { title: "End Title", duration: "4:20", note: "Thomas Newman" }
+    ],
+    songsNote: "Composed by Thomas Newman"
+  },
+  {
+    id: 9, poster: "fellowship of the ring.jpg", title: "The Lord of the Rings: The Fellowship of the Ring", year: 2001, runtime: "2h 58m", rating: 8.8,
+    director: "Peter Jackson", tagline: "One ring to rule them all.",
+    plot: "A young hobbit, Frodo Baggins, inherits the One Ring from his uncle Bilbo and begins a dangerous journey to destroy it in the fires of Mount Doom. Joined by a fellowship of allies from different races of Middle-earth, he must evade the dark forces of Sauron who seek the ring to dominate the world.",
+    genres: ["Fantasy", "Adventure", "Action"], budget: "$93 million", boxOffice: "$887.8 million",
+    openingWeekend: "$47.2 million", releaseDate: "December 19, 2001",
+    trailerUrl: "https://www.youtube.com/watch?v=V75dMMIW2B4", emoji: "💍", badge: "EPIC",
+    cast: [
+      { name: "Elijah Wood", role: "Frodo Baggins" }, { name: "Ian McKellen", role: "Gandalf" },
+      { name: "Viggo Mortensen", role: "Aragorn" }, { name: "Sean Astin", role: "Samwise Gamgee" },
+      { name: "Orlando Bloom", role: "Legolas" }, { name: "Sean Bean", role: "Boromir" }
+    ],
+    songs: [
+      { title: "The Prophecy", duration: "3:55", note: "Howard Shore" }, { title: "Concerning Hobbits", duration: "2:55", note: "Howard Shore" },
+      { title: "The Bridge of Khazad-dûm", duration: "5:57", note: "Howard Shore" }, { title: "The Breaking of the Fellowship", duration: "7:20", note: "Howard Shore" },
+      { title: "May It Be", duration: "4:19", note: "Enya (featured)" }
+    ],
+    songsNote: "Score composed by Howard Shore"
+  },
+  {
+    id: 10, poster: "the two towers.jpg", title: "The Lord of the Rings: The Two Towers", year: 2002, runtime: "2h 59m", rating: 8.8,
+    director: "Peter Jackson", tagline: "A new power is rising.",
+    plot: "After the Fellowship is broken, Frodo and Sam continue their dangerous journey toward Mordor with the treacherous Gollum as their guide. Meanwhile, Aragorn, Legolas, and Gimli join the people of Rohan to fight Saruman's massive army at Helm's Deep while the war for Middle-earth intensifies.",
+    genres: ["Fantasy", "Adventure", "Action"], budget: "$94 million", boxOffice: "$947.5 million",
+    openingWeekend: "$62 million", releaseDate: "December 18, 2002",
+    trailerUrl: "https://youtu.be/LbfMDwc4azU?si=ufMaohvI_fiEN_5J", emoji: "🗡️", badge: "EPIC",
+    cast: [
+      { name: "Elijah Wood", role: "Frodo Baggins" }, { name: "Ian McKellen", role: "Gandalf" },
+      { name: "Viggo Mortensen", role: "Aragorn" }, { name: "Sean Astin", role: "Samwise Gamgee" },
+      { name: "Orlando Bloom", role: "Legolas" }, { name: "Andy Serkis", role: "Gollum / Sméagol" }
+    ],
+    songs: [
+      { title: "Foundations of Stone", duration: "3:51", note: "Howard Shore" }, { title: "The Riders of Rohan", duration: "4:06", note: "Howard Shore" },
+      { title: "Helm's Deep", duration: "3:53", note: "Howard Shore" }, { title: "The White Rider", duration: "5:14", note: "Howard Shore" },
+      { title: "Gollum's Song", duration: "5:51", note: "Emilíana Torrini (featured)" }
+    ],
+    songsNote: "Score composed by Howard Shore"
+  },
+  {
+    id: 11, poster: "return of the king.jpg", title: "The Lord of the Rings: The Return of the King", year: 2003, runtime: "3h 21m", rating: 9.0,
+    director: "Peter Jackson", tagline: "The eye of the enemy is moving.",
+    plot: "As the forces of darkness gather for the final battle for Middle-earth, Aragorn embraces his destiny as king while leading the armies of men against Sauron's power. Meanwhile, Frodo and Sam approach Mount Doom with Gollum as their guide, determined to destroy the One Ring and end Sauron's reign forever.",
+    genres: ["Fantasy", "Adventure", "Action"], budget: "$94 million", boxOffice: "$1.146 billion",
+    openingWeekend: "$72.6 million", releaseDate: "December 17, 2003",
+    trailerUrl: "https://youtu.be/r5X-hFf6Bwo?si=yRO6BS9UAJCY6IU-", emoji: "👑", badge: "OSCAR WINNER",
+    cast: [
+      { name: "Elijah Wood", role: "Frodo Baggins" }, { name: "Ian McKellen", role: "Gandalf" },
+      { name: "Viggo Mortensen", role: "Aragorn" }, { name: "Sean Astin", role: "Samwise Gamgee" },
+      { name: "Orlando Bloom", role: "Legolas" }, { name: "Andy Serkis", role: "Gollum / Sméagol" }
+    ],
+    songs: [
+      { title: "A Storm Is Coming", duration: "2:52", note: "Howard Shore" }, { title: "The Fields of the Pelennor", duration: "3:26", note: "Howard Shore" },
+      { title: "The Return of the King", duration: "10:14", note: "Howard Shore" }, { title: "The Grey Havens", duration: "5:59", note: "Howard Shore" },
+      { title: "Into the West", duration: "5:47", note: "Annie Lennox (featured)" }
+    ],
+    songsNote: "Score composed by Howard Shore"
+  },
+  {
+    id: 12, poster: "saving private ryan.jpg", title: "Saving Private Ryan", year: 1998, runtime: "2h 49m", rating: 8.6,
+    director: "Steven Spielberg", tagline: "The mission is a man.",
+    plot: "During World War II after the D-Day invasion of Normandy, Captain John Miller and a small squad of U.S. soldiers are sent behind enemy lines to find and bring home Private James Ryan, the last surviving brother of four servicemen.",
+    genres: ["War", "Drama", "Action"], budget: "$70 million", boxOffice: "$482.3 million",
+    openingWeekend: "$30.6 million", releaseDate: "July 24, 1998",
+    trailerUrl: "https://youtu.be/9CiW_DgxCnQ?si=rXt_aVx8kAxvr6IJ", emoji: "🎖️", badge: "WAR CLASSIC",
+    cast: [
+      { name: "Tom Hanks", role: "Captain John H. Miller" }, { name: "Matt Damon", role: "Private James Francis Ryan" },
+      { name: "Tom Sizemore", role: "Sergeant Mike Horvath" }, { name: "Edward Burns", role: "Private Richard Reiben" },
+      { name: "Barry Pepper", role: "Private Daniel Jackson" }, { name: "Adam Goldberg", role: "Private Stanley Mellish" }
+    ],
+    songs: [
+      { title: "The Normandy Landings", duration: "4:30", note: "John Williams" }, { title: "Hymn to the Fallen", duration: "6:10", note: "John Williams" },
+      { title: "Revisiting Normandy", duration: "3:58", note: "John Williams" }, { title: "Approaching the Enemy", duration: "3:12", note: "John Williams" },
+      { title: "The Last Battle", duration: "4:25", note: "John Williams" }
+    ],
+    songsNote: "Composed by John Williams"
+  },
+  {
+  id: 13,
+  poster: "wuthering heights.jpg",
+  title: "Wuthering Heights",
+  year: 2026,
+  runtime: "2h 16m",
+  rating: 7.1,
+  director: "Emerald Fennell",
+  tagline: "Love can destroy everything.",
+  plot: "A dark and passionate love story set on the Yorkshire moors, following the intense relationship between Heathcliff, an orphan adopted by the Earnshaw family, and Catherine Earnshaw. Their bond grows into a destructive obsession that impacts generations of both families.",
+  genres: ["Romance", "Drama", "Period"],
+  budget: "$80 million",
+  boxOffice: "$214 million",
+  openingWeekend: "$77 million",
+  releaseDate: "February 13, 2026",
+  trailerUrl: "https://youtu.be/ID0rqEWrN44?si=LggPX1XCtJuSP2OO",
+  emoji: "🌫️",
+  badge: "CLASSIC ADAPTATION",
+
+  cast: [
+    { name: "Margot Robbie", role: "Catherine Earnshaw" },
+    { name: "Jacob Elordi", role: "Heathcliff" },
+    { name: "Hong Chau", role: "Nelly Dean" },
+    { name: "Shazad Latif", role: "Edgar Linton" },
+    { name: "Alison Oliver", role: "Isabella Linton" },
+    { name: "Martin Clunes", role: "Mr. Earnshaw" },
+    { name: "Ewan Mitchell", role: "Joseph" }
+  ],
+
+  songs: [
+    { title: "House", duration: "3:45", note: "Charli XCX ft. John Cale" },
+    { title: "Chains of Love", duration: "3:18", note: "Charli XCX" },
+    { title: "Wall of Sound", duration: "3:30", note: "Charli XCX" },
+    { title: "Always Everywhere", duration: "3:52", note: "Charli XCX" }
+  ],
+
+  songsNote: "Score composed by Anthony Willis; songs by Charli XCX"
+},
+  {
+    id: 14, poster: "marty supreme.jpg", title: "Marty Supreme", year: 2025, runtime: "2h 30m", rating: 8.3,
+    director: "Josh Safdie", tagline: "Greatness is earned one rally at a time.",
+    plot: "Set in the 1950s, the film follows Marty Mauser, an ambitious and eccentric young man determined to become the greatest table tennis player in the world. Inspired by real-life champion Marty Reisman, the story explores his relentless pursuit of fame, success, and respect in a sport few take seriously.",
+    genres: ["Sports", "Drama", "Comedy"], budget: "$60 million", boxOffice: "$162.3 million",
+    openingWeekend: "$27.3 million", releaseDate: "December 25, 2025",
+    trailerUrl: "https://youtu.be/s9gSuKaKcqM?si=BXeC41IcMYrAo7D7", emoji: "🏓", badge: "A24 HIT",
+    cast: [
+      { name: "Timothée Chalamet", role: "Marty Mauser" }, { name: "Gwyneth Paltrow", role: "Kay Stone" },
+      { name: "Odessa A'zion", role: "Rachel Mizler" }, { name: "Tyler Okonma (Tyler, The Creator)", role: "Supporting Role" },
+      { name: "Fran Drescher", role: "Rebecca Mauser" }, { name: "Abel Ferrara", role: "Supporting Role" }
+    ],
+    songs: [
+      { title: "Supreme Opening", duration: "3:42", note: "Daniel Lopatin" }, { title: "Ping Pong Hustle", duration: "2:55", note: "Daniel Lopatin" },
+      { title: "Lower East Side Nights", duration: "3:18", note: "Daniel Lopatin" }, { title: "The Final Rally", duration: "4:05", note: "Daniel Lopatin" },
+      { title: "Champion's Dream", duration: "3:36", note: "Daniel Lopatin" }
+    ],
+    songsNote: "Score composed by Daniel Lopatin"
+  },
+  {
+  id: 15,
+  poster: "materialists.jpg",
+  title: "Materialists",
+  year: 2025,
+  runtime: "1h 56m",
+  rating: 7.0,
+  director: "Celine Song",
+  tagline: "Love isn't always priceless.",
+  plot: "A successful New York City matchmaker who believes she understands love through logic and compatibility suddenly finds her own beliefs challenged when she becomes involved in a complicated love triangle between a wealthy perfect match and her imperfect ex-boyfriend.",
+  genres: ["Romance", "Drama", "Comedy"],
+  budget: "$20 million",
+  boxOffice: "$74 million",
+  openingWeekend: "$18.5 million",
+  releaseDate: "June 13, 2025",
+  trailerUrl: "https://youtu.be/4A_kmjtsJ7c?si=XjTYeWmyHEazDfEN",
+  emoji: "💍",
+  badge: "MODERN ROMANCE",
+
+  cast: [
+    { name: "Dakota Johnson", role: "Lucy" },
+    { name: "Chris Evans", role: "John" },
+    { name: "Pedro Pascal", role: "Randy" },
+    { name: "Marin Ireland", role: "Violet" },
+    { name: "Louisa Jacobson", role: "Charlotte" },
+    { name: "Dasha Nekrasova", role: "Dasha" }
+  ],
+
+  songs: [
+    { title: "Perfect Match", duration: "3:12", note: "Original Score Theme" },
+    { title: "City of Hearts", duration: "2:58", note: "Daniel Pemberton" },
+    { title: "Love Algorithm", duration: "3:25", note: "Daniel Pemberton" },
+    { title: "Second Chances", duration: "3:40", note: "Daniel Pemberton" }
+  ],
+
+  songsNote: "Original score composed by Daniel Pemberton"
+},
+
+{
+  id: 16,
+  poster: "dune.jpg",
+  title: "Dune",
+  year: 2021,
+  runtime: "2h 35m",
+  rating: 8.0,
+  director: "Denis Villeneuve",
+  tagline: "Beyond fear, destiny awaits.",
+  plot: "Paul Atreides, a brilliant and gifted young man born into a great destiny beyond his understanding, must travel to the most dangerous planet in the universe—Arrakis—to ensure the future of his family and his people while powerful forces battle over the planet’s exclusive supply of the most valuable resource in existence.",
+  genres: ["Sci-Fi", "Adventure", "Drama"],
+  budget: "$165 million",
+  boxOffice: "$434.8 million",
+  openingWeekend: "$41 million",
+  releaseDate: "October 22, 2021",
+  trailerUrl: "https://youtu.be/n9xhJrPXop4?si=YYJwEsi6zUaIcBIO",
+  emoji: "🏜️",
+  badge: "EPIC SCI-FI",
+
+  cast: [
+    { name: "Timothée Chalamet", role: "Paul Atreides" },
+    { name: "Rebecca Ferguson", role: "Lady Jessica" },
+    { name: "Oscar Isaac", role: "Duke Leto Atreides" },
+    { name: "Josh Brolin", role: "Gurney Halleck" },
+    { name: "Stellan Skarsgård", role: "Baron Vladimir Harkonnen" },
+    { name: "Zendaya", role: "Chani" },
+    { name: "Jason Momoa", role: "Duncan Idaho" },
+    { name: "Javier Bardem", role: "Stilgar" }
+  ],
+
+  songs: [
+    { title: "Dream of Arrakis", duration: "2:43", note: "Hans Zimmer" },
+    { title: "Ripples in the Sand", duration: "3:10", note: "Hans Zimmer" },
+    { title: "Paul’s Dream", duration: "7:02", note: "Hans Zimmer" },
+    { title: "Armada", duration: "5:20", note: "Hans Zimmer" },
+    { title: "Leaving Caladan", duration: "1:54", note: "Hans Zimmer" }
+  ],
+
+  songsNote: "Original score composed by Hans Zimmer"
+},
+
+{
+  id: 17,
+  poster: "dune 2.jpg",
+  title: "Dune: Part Two",
+  year: 2024,
+  runtime: "2h 46m",
+  rating: 8.7,
+  director: "Denis Villeneuve",
+  tagline: "Long live the fighters.",
+  plot: "Paul Atreides unites with the Fremen of Arrakis to wage war against the House Harkonnen while seeking revenge for the destruction of his family. As Paul rises among the Fremen as a prophesied leader, he must choose between the love of his life and the fate of the known universe.",
+  genres: ["Sci-Fi", "Adventure", "Drama"],
+  budget: "$190 million",
+  boxOffice: "$711.8 million",
+  openingWeekend: "$82.5 million",
+  releaseDate: "March 1, 2024",
+  trailerUrl: "https://youtu.be/Way9Dexny3w?si=Eez1KD-f924iEG-H",
+  emoji: "⚔️",
+  badge: "SCI-FI EPIC",
+
+  cast: [
+    { name: "Timothée Chalamet", role: "Paul Atreides" },
+    { name: "Zendaya", role: "Chani" },
+    { name: "Rebecca Ferguson", role: "Lady Jessica" },
+    { name: "Javier Bardem", role: "Stilgar" },
+    { name: "Josh Brolin", role: "Gurney Halleck" },
+    { name: "Austin Butler", role: "Feyd-Rautha Harkonnen" },
+    { name: "Florence Pugh", role: "Princess Irulan" },
+    { name: "Christopher Walken", role: "Emperor Shaddam IV" },
+    { name: "Stellan Skarsgård", role: "Baron Vladimir Harkonnen" },
+    { name: "Dave Bautista", role: "Glossu Rabban" }
+  ],
+
+  songs: [
+    { title: "A Time of Quiet Between the Storms", duration: "4:52", note: "Hans Zimmer" },
+    { title: "Harvester Attack", duration: "3:18", note: "Hans Zimmer" },
+    { title: "Travel South", duration: "4:10", note: "Hans Zimmer" },
+    { title: "Kiss the Ring", duration: "3:55", note: "Hans Zimmer" },
+    { title: "Only I Will Remain", duration: "6:23", note: "Hans Zimmer" }
+  ],
+
+  songsNote: "Original score composed by Hans Zimmer"
+},
+
+{
+  id: 18,
+  poster: "wild robot.jpg",
+  title: "The Wild Robot",
+  year: 2024,
+  runtime: "1h 42m",
+  rating: 8.3,
+  director: "Chris Sanders",
+  tagline: "Sometimes to survive, you must become more than you were built to be.",
+  plot: "After a shipwreck, an intelligent robot named Roz is stranded on a remote island with no humans. She must learn to adapt to the harsh wilderness, gradually earning the trust of the animals and becoming the adoptive parent of an orphaned gosling.",
+  genres: ["Animation", "Adventure", "Family", "Sci-Fi"],
+  budget: "$78 million",
+  boxOffice: "$333 million",
+  openingWeekend: "$35.8 million",
+  releaseDate: "September 27, 2024",
+  trailerUrl: "https://youtu.be/67vbA5ZJdKQ?si=Ex_spzyW1I7JUovW",
+  emoji: "🤖",
+  badge: "ANIMATED HIT",
+
+  cast: [
+    { name: "Lupita Nyong'o", role: "Roz (ROZZUM Unit 7134)" },
+    { name: "Pedro Pascal", role: "Fink the Fox" },
+    { name: "Kit Connor", role: "Brightbill" },
+    { name: "Bill Nighy", role: "Longneck" },
+    { name: "Stephanie Hsu", role: "Vontra" },
+    { name: "Mark Hamill", role: "Thorn the Bear" },
+    { name: "Catherine O'Hara", role: "Pinktail" }
+  ],
+
+  songs: [
+    { title: "Roz’s Arrival", duration: "2:41", note: "Kris Bowers" },
+    { title: "Learning the Forest", duration: "3:18", note: "Kris Bowers" },
+    { title: "Brightbill’s Flight", duration: "4:05", note: "Kris Bowers" },
+    { title: "The Migration", duration: "3:36", note: "Kris Bowers" },
+    { title: "Home on the Island", duration: "4:12", note: "Kris Bowers" }
+  ],
+
+  songsNote: "Original score composed by Kris Bowers"
+},
+
+{
+  id: 19,
+  poster: "conclave.jpg",
+  title: "Conclave",
+  year: 2024,
+  runtime: "2h 00m",
+  rating: 7.6,
+  director: "Edward Berger",
+  tagline: "Power is decided behind closed doors.",
+  plot: "After the sudden death of the Pope, Cardinal Lawrence is tasked with organizing the secretive process of selecting the next leader of the Catholic Church. As powerful cardinals gather inside the Vatican for the conclave, Lawrence uncovers hidden secrets and conspiracies that could shake the foundations of the Church.",
+  genres: ["Drama", "Thriller", "Mystery"],
+  budget: "$20 million",
+  boxOffice: "$89 million",
+  openingWeekend: "$9.3 million",
+  releaseDate: "October 25, 2024",
+  trailerUrl: "https://youtu.be/JX9jasdi3ic?si=t3FSwsIJpFRO4-N9",
+  emoji: "⛪",
+  badge: "POLITICAL DRAMA",
+
+  cast: [
+    { name: "Ralph Fiennes", role: "Cardinal Thomas Lawrence" },
+    { name: "Stanley Tucci", role: "Cardinal Bellini" },
+    { name: "John Lithgow", role: "Cardinal Tremblay" },
+    { name: "Sergio Castellitto", role: "Cardinal Tedesco" },
+    { name: "Isabella Rossellini", role: "Sister Agnes" },
+    { name: "Carlos Diehz", role: "Cardinal Benitez" }
+  ],
+
+  songs: [
+    { title: "The Vatican Gates", duration: "2:55", note: "Volker Bertelmann" },
+    { title: "Secrets of the Conclave", duration: "3:22", note: "Volker Bertelmann" },
+    { title: "Votes in Silence", duration: "2:48", note: "Volker Bertelmann" },
+    { title: "The Chosen One", duration: "3:40", note: "Volker Bertelmann" }
+  ],
+
+  songsNote: "Original score composed by Volker Bertelmann"
+},
+
+{
+  id: 20,
+  poster: "challengers.jpg",
+  title: "Challengers",
+  year: 2024,
+  runtime: "2h 11m",
+  rating: 7.5,
+  director: "Luca Guadagnino",
+  tagline: "Love. Competition. Rivalry.",
+  plot: "Tashi Duncan, a former tennis prodigy turned coach, transforms her husband Art into a world-famous Grand Slam champion. When Art enters a challenger tournament to regain his confidence after a losing streak, he faces his former best friend and Tashi's ex-boyfriend Patrick, reigniting old rivalries and complicated relationships.",
+  genres: ["Drama", "Romance", "Sport"],
+  budget: "$55 million",
+  boxOffice: "$96 million",
+  openingWeekend: "$15 million",
+  releaseDate: "April 26, 2024",
+  trailerUrl: "https://youtu.be/AXEK7y1BuNQ?si=g4ZVvRo74qlJSyZ3",
+  emoji: "🎾",
+  badge: "SPORTS DRAMA",
+
+  cast: [
+    { name: "Zendaya", role: "Tashi Duncan" },
+    { name: "Mike Faist", role: "Art Donaldson" },
+    { name: "Josh O'Connor", role: "Patrick Zweig" },
+    { name: "Darnell Appling", role: "New Rochelle Umpire" },
+    { name: "Nada Despotovich", role: "Tashi's Mother" }
+  ],
+
+  songs: [
+    { title: "Challengers Theme", duration: "3:45", note: "Trent Reznor & Atticus Ross" },
+    { title: "Rivalry", duration: "2:58", note: "Trent Reznor & Atticus Ross" },
+    { title: "The Match Point", duration: "3:21", note: "Trent Reznor & Atticus Ross" },
+    { title: "Love and Competition", duration: "3:05", note: "Trent Reznor & Atticus Ross" },
+    { title: "Final Serve", duration: "4:02", note: "Trent Reznor & Atticus Ross" }
+  ],
+
+  songsNote: "Original score composed by Trent Reznor & Atticus Ross"
+},
+
+{
+  id: 21,
+  poster: "frankenstein.jpg",
+  title: "Frankenstein",
+  year: 2025,
+  runtime: "2h 25m",
+  rating: 7.8,
+  director: "Guillermo del Toro",
+  tagline: "A monster created. A soul awakened.",
+  plot: "Obsessed scientist Victor Frankenstein pushes the limits of science to create life from death. When his experiment succeeds, the creature he brings into the world struggles with loneliness, rejection, and identity, forcing both creator and creation to confront the consequences of playing god.",
+  genres: ["Horror", "Drama", "Sci-Fi"],
+  budget: "$120 million",
+  boxOffice: "$412 million",
+  openingWeekend: "$68 million",
+  releaseDate: "November 7, 2025",
+  trailerUrl: "https://youtu.be/8aulMPhE12g?si=fOigwwdaZbs4F7XG",
+  emoji: "⚡",
+  badge: "GOTHIC HORROR",
+
+  cast: [
+    { name: "Oscar Isaac", role: "Victor Frankenstein" },
+    { name: "Jacob Elordi", role: "The Monster" },
+    { name: "Mia Goth", role: "Elizabeth Lavenza" },
+    { name: "Christoph Waltz", role: "Dr. Pretorius" },
+    { name: "Ralph Ineson", role: "Professor Krempe" },
+    { name: "Lars Mikkelsen", role: "Alphonse Frankenstein" }
+  ],
+
+  songs: [
+    { title: "The Creation", duration: "3:58", note: "Alexandre Desplat" },
+    { title: "A Spark of Life", duration: "2:46", note: "Alexandre Desplat" },
+    { title: "The Monster Awakens", duration: "4:21", note: "Alexandre Desplat" },
+    { title: "Lonely Creature", duration: "3:33", note: "Alexandre Desplat" },
+    { title: "Creator and Creation", duration: "4:08", note: "Alexandre Desplat" }
+  ],
+
+  songsNote: "Original score composed by Alexandre Desplat"
+},
+
+
+];
+
+const NEW_RELEASE_YEAR = 2025;
+let activeGenre = 'all';
+
+function sortByRating(list) {
+  return [...list].sort((a, b) => b.rating - a.rating);
+}
+
+function cardHTML(m, rank) {
+  const posterHTML = m.poster
+    ? `<img class="card-poster" src="${m.poster}" alt="${m.title} poster">`
+    : `<div class="card-poster-placeholder">
+        <div class="poster-icon">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+       </div>`;
+  return `
+    <div class="card" onclick="openModal(${m.id})" data-genres="${m.genres.join(',').toLowerCase()}">
+      ${posterHTML}
+      ${m.badge ? `<div class="card-badge">${m.badge}</div>` : ''}
+      ${rank !== null ? `<div class="card-rank">#${rank}</div>` : ''}
+      <div class="card-body">
+        <div class="card-title">${m.title}</div>
+        <div class="card-meta">
+          <span>${m.year} · ${m.runtime}</span>
+          <span class="card-rating">⭐ ${m.rating}</span>
+        </div>
+        <div class="card-genres">${m.genres.map(g => `<span class="genre-tag">${g}</span>`).join('')}</div>
+      </div>
+    </div>`;
+}
+
+function renderGrid(list, gridId, showRanks) {
+  const sorted = sortByRating(list);
+  document.getElementById(gridId).innerHTML = sorted.map((m, i) =>
+    cardHTML(m, showRanks ? i + 1 : null)
+  ).join('');
+}
+
+function filterGenre(genre, btn) {
+  activeGenre = genre;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterMovies() { applyFilters(); }
+
+function applyFilters() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  let list = movies;
+
+  if (activeGenre !== 'all') {
+    list = list.filter(m => m.genres.some(g => g.toLowerCase() === activeGenre));
+  }
+  if (query) {
+    list = list.filter(m =>
+      m.title.toLowerCase().includes(query) ||
+      m.director.toLowerCase().includes(query) ||
+      m.cast.some(c => c.name.toLowerCase().includes(query))
+    );
+  }
+
+  const newReleases = list.filter(m => m.year >= NEW_RELEASE_YEAR);
+  const classics    = list.filter(m => m.year < NEW_RELEASE_YEAR);
+
+  const nrSection = document.getElementById('newReleasesSection');
+  nrSection.style.display = newReleases.length > 0 ? '' : 'none';
+  if (newReleases.length > 0) renderGrid(newReleases, 'newReleasesGrid', false);
+  renderGrid(classics, 'moviesGrid', true);
+}
+
+function openModal(id) {
+  const m = movies.find(x => x.id === id);
+  if (!m) return;
+
+  document.getElementById('modalBg').textContent = m.emoji;
+  // Modal thumbnail: show poster image if available, otherwise emoji
+  const thumb = document.getElementById('modalThumb');
+  if (m.poster) {
+    thumb.innerHTML = `<img src="${m.poster}" alt="${m.title} poster">`;
+  } else {
+    thumb.textContent = m.emoji;
+  }
+  document.getElementById('modalTitle').textContent = m.title;
+  document.getElementById('modalTagline').textContent = `"${m.tagline}"`;
+  document.getElementById('modalRating').textContent = m.rating;
+  document.getElementById('modalYear').textContent = `📅 ${m.releaseDate}`;
+  document.getElementById('modalRuntime').textContent = `⏱ ${m.runtime}`;
+  document.getElementById('modalDirector').textContent = `🎬 ${m.director}`;
+  document.getElementById('modalPlot').textContent = m.plot;
+  document.getElementById('trailerBtn').href = m.trailerUrl;
+
+  document.getElementById('modalGenres').innerHTML =
+    m.genres.map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+  document.getElementById('modalStats').innerHTML = `
+    <div class="stat-item"><div class="stat-label">Budget</div><div class="stat-value">${m.budget}</div></div>
+    <div class="stat-item"><div class="stat-label">Box Office</div><div class="stat-value green">${m.boxOffice}</div></div>
+    <div class="stat-item"><div class="stat-label">Opening Weekend</div><div class="stat-value gold">${m.openingWeekend}</div></div>
+    <div class="stat-item"><div class="stat-label">IMDb Rating</div><div class="stat-value gold">⭐ ${m.rating} / 10</div></div>`;
+
+  document.getElementById('modalCast').innerHTML =
+    m.cast.map(c => `<div class="cast-chip">${c.name} <span class="role">as ${c.role}</span></div>`).join('');
+
+  document.getElementById('modalSongs').innerHTML =
+    m.songs.map((s, i) => `
+      <div class="song-item">
+        <span class="song-num">${String(i+1).padStart(2,'0')}</span>
+        <span class="song-name">${s.title}</span>
+        <span class="song-duration">${s.duration}</span>
+      </div>`).join('');
+
+  document.getElementById('modalSongsNote').textContent = m.songsNote;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModalDirect() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('overlay')) closeModalDirect();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+
+applyFilters();
+</script>
+</body>
+</html>
